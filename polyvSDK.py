@@ -51,7 +51,6 @@ class PolyvSDK(object):
 
         try:
             ch.perform()
-            print 'data=%s' % b.getvalue()
         except Exception, e:
             print 'Connection error: %s' % str(e)
             ch.close()
@@ -77,7 +76,6 @@ class PolyvSDK(object):
 
         try:
             ch.perform()
-            print 'data=%s' % b.getvalue()
         except Exception, e:
             print 'error: %s' % str(e)
             ch.close()
@@ -87,6 +85,35 @@ class PolyvSDK(object):
         else:
             return False
 
+    def _processJsonResponse(self, url, json_data=''):
+
+        ch = pycurl.Curl()
+        timeout = 10
+        ch.setopt(ch.SSL_VERIFYPEER, False)
+        ch.setopt(pycurl.URL, url)
+        ch.setopt(ch.CONNECTTIMEOUT, timeout)
+        if not json_data:
+            ch.setopt(ch.HEADER, 0)
+            ch.setopt(ch.CUSTOMREQUEST, 'POST')
+            ch.setopt(ch.POST, 1)
+            ch.setopt(ch.POSTFIELDS, json_data)
+            ch.setopt(ch.HTTPHEADER, [
+                'Content-type: application/json',
+                'Content-length: %s' % len(json_data)
+            ])
+        b = StringIO.StringIO()
+        ch.setopt(pycurl.WRITEFUNCTION, b.write)
+
+        try:
+            ch.perform()
+        except Exception, e:
+            print 'error: %s' % str(e)
+            ch.close()
+
+        if b.getvalue():
+            return b.getvalue()
+        else:
+            return False
 
     def getById(vid):
 
