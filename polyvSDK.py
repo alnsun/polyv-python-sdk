@@ -55,3 +55,46 @@ class PolyvSDK(object):
         except Exception, e:
             print 'Connection error: %s' % str(e)
             ch.close()
+
+    def _processXmlResponse(self, url, xml=''):
+
+        ch = pycurl.Curl()
+        timeout = 10
+        ch.setopt(ch.SSL_VERIFYPEER, False)
+        ch.setopt(pycurl.URL, url)
+        ch.setopt(ch.CONNECTTIMEOUT, timeout)
+        if not xml:
+            ch.setopt(ch.HEADER, 0)
+            ch.setopt(ch.CUSTOMREQUEST, 'POST')
+            ch.setopt(ch.POST, 1)
+            ch.setopt(ch.POSTFIELDS, xml)
+            ch.setopt(ch.HTTPHEADER, [
+                'Content-type: application/xml',
+                'Content-length: %s' % len(xml)
+            ])
+        b = StringIO.StringIO()
+        ch.setopt(pycurl.WRITEFUNCTION, b.write)
+
+        try:
+            ch.perform()
+            print 'data=%s' % b.getvalue()
+        except Exception, e:
+            print 'error: %s' % str(e)
+            ch.close()
+
+        if b.getvalue():
+            return b.getvalue()
+        else:
+            return False
+
+
+    def getById(vid):
+
+        if (self._sign):
+            hash = sha1(
+                'readtoken=%(readtoken)s&vid=%(vid)s%(privatekey)s' % {
+                    'readtoken': self._readtoken,
+                    'vid': vid,
+                    'privatekey': self._privatekey
+                }
+            )
