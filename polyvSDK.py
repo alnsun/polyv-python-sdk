@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import StringIO
 from hashlib import sha1
+from xml.etree import ElementTree
 
 import pycurl
 try:
@@ -81,7 +82,7 @@ class PolyvSDK(object):
             ch.close()
 
         if b.getvalue():
-            return b.getvalue()
+            return ElementTree.XML(b.getvalue())
         else:
             return False
 
@@ -115,13 +116,54 @@ class PolyvSDK(object):
         else:
             return False
 
-    def getById(vid):
+    def getById(self, vid):
 
         if (self._sign):
-            hash = sha1(
-                'readtoken=%(readtoken)s&vid=%(vid)s%(privatekey)s' % {
+            hash = sha1('readtoken=%(readtoken)s&vid=%(vid)s%(privatekey)s' % {
                     'readtoken': self._readtoken,
                     'vid': vid,
                     'privatekey': self._privatekey
                 }
-            )
+            ).hexdigest()
+
+        url = 'http://v.polyv.net/uc/services/rest?readtoken=%(readtoken)s&method=getById&vid=%(vid)s&format=xml&sign=%(sign)s'
+        url = url % {'readtoken': self._readtoken,
+            'vid': vid,
+            'sign': hash
+        }
+        xml = self._processXmlResponse(url, '')
+
+        if xml is not None:
+            if xml.find('./error').text == '0':
+                return self.makeVideo(xml.find('./data').find('./video'))
+            else:
+                return {
+                    'returncode': xml.find('./error').text
+                }
+        else:
+            return None
+
+    def makeVideo(self, video):
+        return {
+            'vid': video.find('./vid').text,
+            'hlsIndex': video.find('./hlsIndex').text,
+            'swf_link': video.find('./swf_link').text,
+            'ptime': video.find('./ptime').text,
+            'status': video.find('./status').text,
+            'df': video.find('./df').text,
+            'first_image': video.find('./first_image').text,
+            'title': video.find('./title').text,
+            'desc': video.find('./context').text,
+            'duration': video.find('./duration').text,
+            'flv1': video.find('./flv1').text,
+            #'flv2': video.find('./flv2').text,
+            #'flv3': video.find('./flv3').text,
+            'mp4_1': video.find('./mp4_1').text,
+            #'mp4_2': video.find('./mp4_2').text,
+            #'mp4_3': video.find('./mp4_3').text,
+            #'hls_1': video.find('./hls_1').text,
+            #'hls_2': video.find('./hls_2').text,
+            #'hls_3': video.find('./hls_3').text,
+            'seed': video.find('./seed').text,
+        }
+
