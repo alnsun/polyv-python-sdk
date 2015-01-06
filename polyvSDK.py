@@ -146,7 +146,7 @@ class PolyvSDK(object):
     def makeVideo(self, video):
         return {
             'vid': video.find('./vid').text,
-            'hlsIndex': video.find('./hlsIndex').text,
+            'hlsIndex': video.find('./hlsIndex').text if video.find('./hlsIndex') is not None else '',
             'swf_link': video.find('./swf_link').text,
             'ptime': video.find('./ptime').text,
             'status': video.find('./status').text,
@@ -155,15 +155,49 @@ class PolyvSDK(object):
             'title': video.find('./title').text,
             'desc': video.find('./context').text,
             'duration': video.find('./duration').text,
-            'flv1': video.find('./flv1').text,
-            #'flv2': video.find('./flv2').text,
-            #'flv3': video.find('./flv3').text,
-            'mp4_1': video.find('./mp4_1').text,
-            #'mp4_2': video.find('./mp4_2').text,
-            #'mp4_3': video.find('./mp4_3').text,
-            #'hls_1': video.find('./hls_1').text,
-            #'hls_2': video.find('./hls_2').text,
-            #'hls_3': video.find('./hls_3').text,
+            'flv1': video.find('./flv1').text if video.find('./flv1') is not None else '',
+            'flv2': video.find('./flv2').text if video.find('./flv2') is not None else '',
+            'flv3': video.find('./flv3').text if video.find('./flv3') is not None else '',
+            'mp4_1': video.find('./mp4_1').text if video.find('./mp4_1') is not None else '',
+            'mp4_2': video.find('./mp4_2').text if video.find('./mp4_2') is not None else '',
+            'mp4_3': video.find('./mp4_3').text if video.find('./mp4_3') is not None else '',
+            'hls_1': video.find('./hls_1').text if video.find('./hls_1') is not None else '',
+            'hls_2': video.find('./hls_2').text if video.find('./hls_2') is not None else '',
+            'hls_3': video.find('./hls_3').text if video.find('./hls_3') is not None else '',
             'seed': video.find('./seed').text,
         }
 
+    def getNewList(self, pageNum, numPerPage, catatree):
+
+        if (self._sign):
+            hash = sha1('catatree=%(catatree)s&numPerPage=%(numPerPage)s&pageNum=%(pageNum)s&readtoken=%(readtoken)s%(privatekey)s' % {
+                    'catatree': catatree,
+                    'numPerPage': numPerPage,
+                    'pageNum': pageNum,
+                    'readtoken': self._readtoken,
+                    'privatekey': self._privatekey
+                }
+            ).hexdigest()
+
+        url = 'http://v.polyv.net/uc/services/rest?readtoken=%(readtoken)s&method=getNewList&pageNum=%(pageNum)s&format=xml&numPerPage=%(numPerPage)s&catatree=%(catatree)s&sign=%(sign)s'
+        url = url % {'readtoken': self._readtoken,
+            'pageNum': pageNum,
+            'numPerPage': numPerPage,
+            'catatree': catatree,
+            'sign': hash
+        }
+        xml = self._processXmlResponse(url, '')
+
+        if xml is not None:
+            if xml.find('./error').text == '0':
+                result = []
+                for video in xml.find('./data'):
+                    videodata = self.makeVideo(video)
+                    result.append(videodata)
+                return result
+            else:
+                return {
+                    'returncode': xml.find('./error').text
+                }
+        else:
+            return None
