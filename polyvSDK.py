@@ -43,7 +43,7 @@ class PolyvSDK(object):
             ('cataid', cataid),
             ('writetoken', self._writetoken),
             ('sign', hash),
-            ('format', 'json'),
+            ('format', 'xml'),
             ('Filedata', (pycurl.FORM_FILE, filename))
         ]
         ch.setopt(pycurl.HTTPPOST, post_data)
@@ -52,6 +52,7 @@ class PolyvSDK(object):
 
         try:
             ch.perform()
+            print b.getvalue()
         except Exception, e:
             print 'Connection error: %s' % str(e)
             ch.close()
