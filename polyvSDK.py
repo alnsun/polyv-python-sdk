@@ -56,6 +56,21 @@ class PolyvSDK(object):
             print 'Connection error: %s' % str(e)
             ch.close()
 
+        if b.getvalue():
+            xml = ElementTree.XML(b.getvalue())
+            if xml is not None:
+                if xml.find('./error').text == '0':
+                    video =  xml.find('./data').find('./video')
+                    return self.makeVideo(video)
+                else:
+                    return {
+                        'returncode': xml.find('./error').text
+                    }
+            else:
+                return None
+        else:
+            return False
+
     def _processXmlResponse(self, url, xml=''):
 
         ch = pycurl.Curl()
